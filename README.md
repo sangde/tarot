@@ -21,13 +21,26 @@ npx vercel dev
 
 Mở URL mà CLI in ra (thường http://localhost:3000).
 
+## Admin
+
+Trang quản trị: `/admin.html`
+
+Đăng nhập bằng:
+- `ADMIN_EMAIL` (mặc định `admin@tarot.local`)
+- `ADMIN_PASSWORD` (mặc định `TarotAdmin@2026` — **đổi ngay trên Vercel**)
+
+Admin có thể:
+- Tạo / bật / tắt / xóa mã kích hoạt
+- Xem user, kích hoạt Premium, gán role admin, xóa user
+
 ## Biến môi trường (Vercel)
 
 - `AUTH_SECRET` — chuỗi bí mật ký cookie (bắt buộc production)
-- `ACTIVATION_CODES` — mã cách nhau bởi dấu phẩy, vd `TAROT-VIP-2026,KHACH-ABC`
-- `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — (khuyến nghị) lưu IP/user bền vững
+- `ACTIVATION_CODES` — mã ENV cách nhau bởi dấu phẩy
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` — tài khoản admin
+- `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` — (khuyến nghị) lưu user/mã bền vững
 
-Không có Redis: vẫn chạy bằng memory + cookie guest (đủ dùng tạm; multi-instance có thể lệch).
+Không có Redis: dữ liệu admin/user có thể mất khi serverless restart.
 
 ## Deploy
 

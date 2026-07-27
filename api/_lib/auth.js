@@ -152,6 +152,18 @@ function activationCodes() {
   );
 }
 
+function adminEmail() {
+  return (process.env.ADMIN_EMAIL || "admin@tarot.local").trim().toLowerCase();
+}
+
+function adminPassword() {
+  return process.env.ADMIN_PASSWORD || "TarotAdmin@2026";
+}
+
+function isAdminSession(session) {
+  return Boolean(session?.admin);
+}
+
 module.exports = {
   COOKIE,
   sign,
@@ -166,4 +178,7 @@ module.exports = {
   activationCodes,
   freeIdentity,
   guestIdCookie,
+  adminEmail,
+  adminPassword,
+  isAdminSession,
 };

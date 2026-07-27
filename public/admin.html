@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin · Tarot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body class="admin-body">
+    <div class="atmosphere" aria-hidden="true">
+      <div class="mist mist-a"></div>
+      <div class="mist mist-b"></div>
+    </div>
+
+    <header class="site-header">
+      <a class="brand" href="/">Tarot</a>
+      <nav class="nav">
+        <a class="nav-link" href="/">Về trang chủ</a>
+        <span class="access-badge is-premium" id="admin-badge">Admin</span>
+        <button type="button" class="btn btn-ghost btn-sm" id="admin-logout" hidden>Đăng xuất</button>
+      </nav>
+    </header>
+
+    <main class="admin-main">
+      <section class="admin-login" id="admin-login">
+        <h1>Quản trị Tarot</h1>
+        <p>Đăng nhập admin để quản lý tài khoản và mã kích hoạt.</p>
+        <form id="admin-login-form" class="admin-card">
+          <label class="field">
+            <span>Email admin</span>
+            <input type="email" id="admin-email" autocomplete="username" required />
+          </label>
+          <label class="field">
+            <span>Mật khẩu</span>
+            <input type="password" id="admin-password" autocomplete="current-password" required />
+          </label>
+          <button type="submit" class="btn btn-primary btn-wide">Đăng nhập</button>
+          <p class="admin-hint" id="login-hint"></p>
+        </form>
+      </section>
+
+      <section class="admin-dash" id="admin-dash" hidden>
+        <div class="admin-head">
+          <div>
+            <h1>Bảng quản trị</h1>
+            <p id="admin-meta">—</p>
+          </div>
+        </div>
+
+        <div class="admin-grid">
+          <section class="admin-card">
+            <div class="admin-card-head">
+              <h2>Mã kích hoạt</h2>
+            </div>
+            <form id="create-code-form" class="admin-inline-form">
+              <input type="text" id="new-code" placeholder="Mã mới" required />
+              <input type="text" id="new-code-note" placeholder="Ghi chú" />
+              <input type="number" id="new-code-max" placeholder="Max uses" min="1" />
+              <button type="submit" class="btn btn-primary">Tạo mã</button>
+            </form>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mã</th>
+                    <th>Đã dùng</th>
+                    <th>Trạng thái</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="codes-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="admin-card">
+            <div class="admin-card-head">
+              <h2>Tài khoản</h2>
+              <button type="button" class="btn btn-ghost btn-sm" id="refresh-users">Làm mới</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Premium</th>
+                    <th>Role</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="users-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="./admin.js" type="module"></script>
+  </body>
+</html>

@@ -52,6 +52,7 @@ let activeIndex = 0;
 let access = {
   premium: false,
   email: null,
+  admin: false,
   drawsLeft: 1,
   features: {
     multiSpread: false,
@@ -176,11 +177,14 @@ function applyAccessUI() {
   }
 
   $("#logout-btn").hidden = !access.email && !access.premium;
+  $("#admin-link").hidden = !access.admin;
   $("#access-dialog-status").textContent = premium
-    ? "Bạn đang dùng Premium — rút bài không giới hạn."
+    ? access.admin
+      ? "Bạn đang đăng nhập admin — có thể vào trang quản trị."
+      : "Bạn đang dùng Premium — rút bài không giới hạn."
     : access.email
-      ? `Đã đăng nhập ${access.email} (chưa kích hoạt). Nhập mã để mở khóa.`
-      : "Chưa kích hoạt. Nhập mã, hoặc đăng ký / đăng nhập rồi kích hoạt.";
+      ? `Đã đăng nhập ${access.email} (chưa kích hoạt). Nhập mã ở cột bên trái để mở khóa.`
+      : "Chọn một trong hai cách: dùng mã kích hoạt, hoặc tạo/đăng nhập tài khoản rồi kích hoạt.";
 
   renderLibrary($$(".chip.active")?.dataset.filter || "all");
 }
@@ -539,6 +543,7 @@ async function refreshAccess() {
     access = {
       premium: false,
       email: null,
+      admin: false,
       drawsLeft: 1,
       features: { multiSpread: false, reversed: false, libraryFull: false, unlimitedDraws: false },
     };
@@ -553,7 +558,8 @@ function bindAccess() {
     btn.addEventListener("click", () => {
       $$("[data-access-tab]").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
-      $$(".access-panel").forEach((p) => (p.hidden = p.dataset.panel !== btn.dataset.accessTab));
+      $("#panel-login").hidden = btn.dataset.accessTab !== "login";
+      $("#panel-register").hidden = btn.dataset.accessTab !== "register";
     });
   });
 

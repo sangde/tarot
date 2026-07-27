@@ -1,6 +1,6 @@
 const { setCors, json, readBody } = require("./_lib/http");
-const { activationCodes, getSession, sessionCookie } = require("./_lib/auth");
-const { getUser, saveUser } = require("./_lib/store");
+const { getSession, sessionCookie } = require("./_lib/auth");
+const { findValidCode, consumeCode, getUser, saveUser } = require("./_lib/store");
 
 module.exports = async (req, res) => {
   setCors(req, res);
@@ -17,15 +17,14 @@ module.exports = async (req, res) => {
     return json(res, 400, { error: "Invalid JSON" }, {}, req);
   }
 
-  const code = String(body.code || "")
-    .trim()
-    .toUpperCase();
+  const code = String(body.code || "").trim();
   if (!code) {
     return json(res, 400, { error: "missing_code", message: "Nhập mã kích hoạt." }, {}, req);
   }
 
-  if (!activationCodes().has(code)) {
-    return json(res, 403, { error: "invalid_code", message: "Mã không hợp lệ." }, {}, req);
+  const valid = await findValidCode(code);
+  if (!valid) {
+    return json(res, 403, { error: "invalid_code", message: "Mã không hợp lệ hoặc đã hết lượt." }, {}, req);
   }
 
   const session = getSession(req);
@@ -36,10 +35,12 @@ module.exports = async (req, res) => {
     if (user) {
       user.activated = true;
       user.activatedAt = new Date().toISOString();
-      user.activatedBy = code;
+      user.activatedBy = valid.code;
       await saveUser(user);
     }
   }
+
+  await consumeCode(code);
 
   return json(
     res,
@@ -49,7 +50,14 @@ module.exports = async (req, res) => {
       premium: true,
       message: "Kích hoạt thành công. Bạn có thể rút bài không giới hạn.",
     },
-    { "Set-Cookie": sessionCookie({ premium: true, email: email || null, via: "code" }) },
+    {
+      "Set-Cookie": sessionCookie({
+        premium: true,
+        email: email || null,
+        admin: Boolean(session?.admin),
+        via: "code",
+      }),
+    },
     req
   );
 };

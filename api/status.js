@@ -51,6 +51,7 @@ module.exports = async (req, res) => {
     {
       premium,
       email: session?.email || null,
+      admin: Boolean(session?.admin),
       drawsLeft: premium ? null : drawn ? 0 : 1,
       features: {
         multiSpread: premium,

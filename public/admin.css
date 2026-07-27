@@ -1,0 +1,149 @@
+.admin-body {
+  min-height: 100vh;
+}
+
+.admin-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.admin-login,
+.admin-dash {
+  animation: fade-up 0.5s ease both;
+}
+
+.admin-login {
+  max-width: 420px;
+  margin: 4rem auto 0;
+}
+
+.admin-login h1,
+.admin-head h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3rem);
+  color: var(--gold-soft);
+  font-weight: 500;
+}
+
+.admin-login > p,
+.admin-head p,
+.admin-hint {
+  color: var(--ink-muted);
+}
+
+.admin-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(13, 26, 36, 0.82);
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-head {
+  margin-bottom: 1.5rem;
+}
+
+.admin-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.admin-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-card-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--gold-soft);
+  font-weight: 500;
+}
+
+.admin-inline-form {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.7fr auto;
+  gap: 0.5rem;
+}
+
+.admin-inline-form input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--ink);
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.4rem;
+  border-bottom: 1px solid rgba(212, 165, 116, 0.12);
+  vertical-align: middle;
+}
+
+th {
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.75rem;
+}
+
+.tag.ok {
+  color: #b7d7c8;
+  border-color: rgba(111, 158, 140, 0.45);
+}
+
+.tag.off {
+  color: var(--ink-muted);
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.row-actions button {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-muted);
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.row-actions button:hover {
+  color: var(--ink);
+  border-color: var(--gold);
+}
+
+@media (max-width: 800px) {
+  .admin-inline-form {
+    grid-template-columns: 1fr;
+  }
+}

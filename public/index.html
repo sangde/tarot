@@ -152,49 +152,65 @@
         <button class="dialog-close" aria-label="Đóng">×</button>
       </form>
       <div class="dialog-inner">
-        <h3 class="access-title">Tài khoản & mã kích hoạt</h3>
+        <h3 class="access-title">Mở khóa Premium</h3>
         <p class="access-desc" id="access-dialog-status">Đang tải trạng thái…</p>
 
-        <div class="access-tabs" role="tablist">
-          <button type="button" class="tab active" data-access-tab="code">Mã kích hoạt</button>
-          <button type="button" class="tab" data-access-tab="login">Đăng nhập</button>
-          <button type="button" class="tab" data-access-tab="register">Đăng ký</button>
+        <div class="access-split">
+          <section class="access-card">
+            <p class="access-card-kicker">Cách 1</p>
+            <h4>Dùng mã kích hoạt</h4>
+            <p class="access-card-desc">Nhập mã bạn nhận được để mở ngay trên trình duyệt này.</p>
+            <form id="panel-code">
+              <label class="field">
+                <span>Mã kích hoạt</span>
+                <input type="text" id="activate-code" placeholder="VD: TAROT-VIP-2026" autocomplete="off" />
+              </label>
+              <button type="submit" class="btn btn-primary btn-wide">Kích hoạt mã</button>
+            </form>
+          </section>
+
+          <section class="access-card">
+            <p class="access-card-kicker">Cách 2</p>
+            <h4>Tài khoản của bạn</h4>
+            <p class="access-card-desc">Đăng nhập để giữ Premium trên nhiều thiết bị.</p>
+
+            <div class="access-mini-tabs">
+              <button type="button" class="tab active" data-access-tab="login">Đăng nhập</button>
+              <button type="button" class="tab" data-access-tab="register">Tạo tài khoản</button>
+            </div>
+
+            <form class="access-panel" id="panel-login" data-panel="login">
+              <label class="field">
+                <span>Email</span>
+                <input type="email" id="login-email" autocomplete="username" />
+              </label>
+              <label class="field">
+                <span>Mật khẩu</span>
+                <input type="password" id="login-password" autocomplete="current-password" />
+              </label>
+              <button type="submit" class="btn btn-primary btn-wide">Đăng nhập</button>
+            </form>
+
+            <form class="access-panel" id="panel-register" data-panel="register" hidden>
+              <label class="field">
+                <span>Email</span>
+                <input type="email" id="register-email" autocomplete="username" />
+              </label>
+              <label class="field">
+                <span>Mật khẩu (tối thiểu 6 ký tự)</span>
+                <input type="password" id="register-password" autocomplete="new-password" />
+              </label>
+              <button type="submit" class="btn btn-primary btn-wide">Tạo tài khoản</button>
+              <p class="access-card-desc">Sau khi tạo, dùng mã kích hoạt để mở Premium cho tài khoản.</p>
+            </form>
+          </section>
         </div>
 
-        <form class="access-panel" id="panel-code" data-panel="code">
-          <label class="field">
-            <span>Mã kích hoạt</span>
-            <input type="text" id="activate-code" placeholder="VD: TAROT-VIP-2026" autocomplete="off" />
-          </label>
-          <button type="submit" class="btn btn-primary btn-wide">Kích hoạt</button>
-        </form>
-
-        <form class="access-panel" id="panel-login" data-panel="login" hidden>
-          <label class="field">
-            <span>Email</span>
-            <input type="email" id="login-email" autocomplete="username" />
-          </label>
-          <label class="field">
-            <span>Mật khẩu</span>
-            <input type="password" id="login-password" autocomplete="current-password" />
-          </label>
-          <button type="submit" class="btn btn-primary btn-wide">Đăng nhập</button>
-        </form>
-
-        <form class="access-panel" id="panel-register" data-panel="register" hidden>
-          <label class="field">
-            <span>Email</span>
-            <input type="email" id="register-email" autocomplete="username" />
-          </label>
-          <label class="field">
-            <span>Mật khẩu (tối thiểu 6 ký tự)</span>
-            <input type="password" id="register-password" autocomplete="new-password" />
-          </label>
-          <button type="submit" class="btn btn-primary btn-wide">Tạo tài khoản</button>
-        </form>
-
         <p class="access-feedback" id="access-feedback" hidden></p>
-        <button type="button" class="btn btn-ghost btn-wide" id="logout-btn" hidden>Đăng xuất</button>
+        <div class="access-footer-actions">
+          <a class="btn btn-ghost" href="/admin.html" id="admin-link" hidden>Quản trị admin</a>
+          <button type="button" class="btn btn-ghost" id="logout-btn" hidden>Đăng xuất</button>
+        </div>
       </div>
     </dialog>
 
