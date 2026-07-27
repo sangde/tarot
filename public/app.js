@@ -49,9 +49,41 @@ const VI_NAMES = {
 let cards = [];
 let drawn = [];
 let activeIndex = 0;
+let access = {
+  premium: false,
+  email: null,
+  drawsLeft: 1,
+  features: {
+    multiSpread: false,
+    reversed: false,
+    libraryFull: false,
+    unlimitedDraws: false,
+  },
+};
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    const err = new Error(data.message || "Request failed");
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
 
 function displayName(card) {
   const vi = VI_NAMES[card.id];
@@ -69,11 +101,11 @@ function shuffle(arr) {
 
 function pickCards(count, allowReversed) {
   const deck = shuffle(cards);
-  return deck.slice(0, count).map((card, i) => ({
+  return deck.slice(0, count).map((card) => ({
     card,
     reversed: allowReversed ? Math.random() < 0.35 : false,
     position: null,
-    delay: 180 + i * 320,
+    delay: 180,
   }));
 }
 
@@ -102,15 +134,71 @@ function textForFields(bundle, fields) {
   return chunks.join("\n\n").trim();
 }
 
+function applyAccessUI() {
+  const badge = $("#access-badge");
+  const note = $("#access-note");
+  const premium = access.premium;
+
+  if (premium) {
+    badge.textContent = access.email ? `Premium · ${access.email}` : "Premium đã kích hoạt";
+    badge.classList.add("is-premium");
+    note.innerHTML = "Tài khoản Premium: rút không giới hạn, trải 3 lá / tình cảm, lá ngược, thư viện đầy đủ.";
+  } else {
+    const left = access.drawsLeft ?? 0;
+    badge.textContent = left > 0 ? `Miễn phí · còn ${left} lần` : "Hết lượt miễn phí";
+    badge.classList.remove("is-premium");
+    note.innerHTML =
+      left > 0
+        ? `Khách: mỗi IP chỉ rút <strong>1 lần · 1 lá</strong>. Còn <strong>${left}</strong> lượt. Có mã / tài khoản kích hoạt để mở đủ chức năng.`
+        : `IP này đã hết lượt miễn phí. <button type="button" class="nav-link" id="note-open-access">Nhập mã hoặc đăng nhập</button> để rút tiếp.`;
+    $("#note-open-access")?.addEventListener("click", () => $("#access-dialog").showModal());
+  }
+
+  $$(".premium-only").forEach((el) => {
+    el.classList.toggle("is-locked", !premium);
+    const input = el.querySelector("input");
+    if (input) {
+      input.disabled = !premium;
+      if (!premium && input.type === "radio" && input.checked) {
+        $('input[name="spread"][value="1"]').checked = true;
+      }
+      if (!premium && input.type === "checkbox") input.checked = false;
+    }
+  });
+
+  $("#library-section-lock")?.remove();
+  if (!premium) {
+    const hint = document.createElement("p");
+    hint.className = "library-lock-hint";
+    hint.id = "library-section-lock";
+    hint.textContent = "Thư viện xem nhanh miễn phí. Chi tiết đầy đủ mở khi kích hoạt Premium.";
+    $(".library-filters")?.before(hint);
+  }
+
+  $("#logout-btn").hidden = !access.email && !access.premium;
+  $("#access-dialog-status").textContent = premium
+    ? "Bạn đang dùng Premium — rút bài không giới hạn."
+    : access.email
+      ? `Đã đăng nhập ${access.email} (chưa kích hoạt). Nhập mã để mở khóa.`
+      : "Chưa kích hoạt. Nhập mã, hoặc đăng ký / đăng nhập rồi kích hoạt.";
+
+  renderLibrary($$(".chip.active")?.dataset.filter || "all");
+}
+
 function renderInterpretation(drawnCard) {
   const { card, reversed } = drawnCard;
   const bundle = meaningBundle(drawnCard);
-  const availableTabs = TAB_DEFS.filter((tab) => textForFields(bundle, tab.fields));
-  const firstTab = availableTabs[0]?.id || "overview";
-
+  const tabs = access.premium
+    ? TAB_DEFS.filter((tab) => textForFields(bundle, tab.fields))
+    : TAB_DEFS.filter((tab) => tab.id === "overview" && textForFields(bundle, tab.fields));
+  const firstTab = tabs[0]?.id || "overview";
   const img = card.image || card.icon || "";
+  const keywordsHtml = (bundle.keywords || [])
+    .map((k) => `<span class="keyword">${escapeHtml(k)}</span>`)
+    .join("");
+
   const actionsHtml =
-    bundle.actions?.length > 0
+    access.premium && bundle.actions?.length
       ? `<div class="actions-block">
           <h4>Trong hành động</h4>
           ${bundle.actions
@@ -121,11 +209,9 @@ function renderInterpretation(drawnCard) {
             )
             .join("")}
         </div>`
-      : "";
-
-  const keywordsHtml = (bundle.keywords || [])
-    .map((k) => `<span class="keyword">${escapeHtml(k)}</span>`)
-    .join("");
+      : access.premium
+        ? ""
+        : `<div class="actions-block"><p>Premium để xem đủ chủ đề (công việc, tình yêu, tài chính…) và hành động gợi ý.</p></div>`;
 
   $("#interpretation").innerHTML = `
     <div class="interp-header">
@@ -139,14 +225,14 @@ function renderInterpretation(drawnCard) {
       </div>
     </div>
     <div class="tabs" role="tablist">
-      ${availableTabs
+      ${tabs
         .map(
-          (t, i) =>
+          (t) =>
             `<button type="button" class="tab ${t.id === firstTab ? "active" : ""}" data-tab="${t.id}" role="tab">${t.label}</button>`
         )
         .join("")}
     </div>
-    ${availableTabs
+    ${tabs
       .map((t) => {
         const body = textForFields(bundle, t.fields);
         return `<div class="tab-panel" data-panel="${t.id}" ${
@@ -192,7 +278,7 @@ function renderDrawnCards() {
       (d, index) => `
     <button type="button" class="drawn-card ${d.reversed ? "is-reversed" : ""} ${
       index === activeIndex ? "is-active" : ""
-    }" data-index="${index}" style="animation-delay:${d.delay}ms">
+    }" data-index="${index}">
       <p class="position">${escapeHtml(d.position.label)}</p>
       <div class="card-stage">
         <div class="card-flip">
@@ -215,12 +301,11 @@ function renderDrawnCards() {
     });
   });
 
-  // Reveal with stagger
   drawn.forEach((d, index) => {
     setTimeout(() => {
       const el = $(`.drawn-card[data-index="${index}"]`, row);
       if (el) el.classList.add("is-revealed");
-    }, d.delay + 200);
+    }, 200 + index * 320);
   });
 }
 
@@ -234,11 +319,28 @@ async function runDraw(event) {
   document.body.classList.add("shuffling");
   $("#draw-btn").textContent = "Đang xào bài…";
 
-  await wait(650);
+  try {
+    await api("/api/draw", {
+      method: "POST",
+      body: JSON.stringify({ spread: spreadKey, allowReversed }),
+    });
+  } catch (err) {
+    document.body.classList.remove("shuffling");
+    $("#draw-btn").textContent = "Xào bài & rút";
+    alert(err.data?.message || err.message);
+    if (err.data?.error === "ip_limit" || err.data?.error === "free_limit") {
+      $("#access-dialog").showModal();
+    }
+    await refreshAccess();
+    return;
+  }
+
+  await wait(450);
 
   drawn = pickCards(positions.length, allowReversed).map((d, i) => ({
     ...d,
     position: positions[i],
+    delay: 180 + i * 320,
   }));
   activeIndex = 0;
 
@@ -251,6 +353,7 @@ async function runDraw(event) {
 
   renderDrawnCards();
   renderInterpretation(drawn[0]);
+  await refreshAccess();
 
   $("#draw-btn").textContent = "Xào bài & rút";
   document.body.classList.remove("shuffling");
@@ -298,6 +401,33 @@ function openLibraryCard(id) {
     .map((k) => `<span class="keyword">${escapeHtml(k)}</span>`)
     .join("");
   const upright = card.upright || {};
+
+  if (!access.premium) {
+    $("#dialog-inner").innerHTML = `
+      <div class="interp-header">
+        ${card.image ? `<img src="${card.image}" alt="" referrerpolicy="no-referrer" />` : ""}
+        <div>
+          <h3>${escapeHtml(displayName(card))}</h3>
+          <span class="badge">${card.numberLine || (card.arcana === "major" ? "Ẩn chính" : card.suit)}</span>
+          <div class="keywords">${keywords}</div>
+        </div>
+      </div>
+      <div class="tab-panel">${escapeHtml(
+        (card.description || upright.overview || "").slice(0, 280) + "…"
+      )}</div>
+      <div class="actions-block">
+        <p>Kích hoạt Premium để đọc đủ mô tả, tình yêu, công việc và các chủ đề khác.</p>
+        <button type="button" class="btn btn-primary" id="lib-open-access">Tài khoản / Mã</button>
+      </div>
+    `;
+    $("#lib-open-access")?.addEventListener("click", () => {
+      dialog.close();
+      $("#access-dialog").showModal();
+    });
+    dialog.showModal();
+    return;
+  }
+
   $("#dialog-inner").innerHTML = `
     <div class="interp-header">
       ${card.image ? `<img src="${card.image}" alt="" referrerpolicy="no-referrer" />` : ""}
@@ -359,6 +489,97 @@ function initStars() {
   requestAnimationFrame(tick);
 }
 
+function showFeedback(msg, ok) {
+  const el = $("#access-feedback");
+  el.hidden = false;
+  el.textContent = msg;
+  el.classList.toggle("is-ok", ok);
+  el.classList.toggle("is-err", !ok);
+}
+
+async function refreshAccess() {
+  try {
+    access = await api("/api/status");
+  } catch {
+    access = {
+      premium: false,
+      email: null,
+      drawsLeft: 1,
+      features: { multiSpread: false, reversed: false, libraryFull: false, unlimitedDraws: false },
+    };
+  }
+  applyAccessUI();
+}
+
+function bindAccess() {
+  $("#open-access").addEventListener("click", () => $("#access-dialog").showModal());
+
+  $$("[data-access-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      $$("[data-access-tab]").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      $$(".access-panel").forEach((p) => (p.hidden = p.dataset.panel !== btn.dataset.accessTab));
+    });
+  });
+
+  $("#panel-code").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const data = await api("/api/activate", {
+        method: "POST",
+        body: JSON.stringify({
+          code: $("#activate-code").value,
+          email: access.email || undefined,
+        }),
+      });
+      showFeedback(data.message, true);
+      await refreshAccess();
+    } catch (err) {
+      showFeedback(err.data?.message || err.message, false);
+    }
+  });
+
+  $("#panel-login").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const data = await api("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email: $("#login-email").value,
+          password: $("#login-password").value,
+        }),
+      });
+      showFeedback(data.message, true);
+      await refreshAccess();
+    } catch (err) {
+      showFeedback(err.data?.message || err.message, false);
+    }
+  });
+
+  $("#panel-register").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      const data = await api("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          email: $("#register-email").value,
+          password: $("#register-password").value,
+        }),
+      });
+      showFeedback(data.message, true);
+      await refreshAccess();
+    } catch (err) {
+      showFeedback(err.data?.message || err.message, false);
+    }
+  });
+
+  $("#logout-btn").addEventListener("click", async () => {
+    await api("/api/auth/logout", { method: "POST", body: "{}" });
+    showFeedback("Đã đăng xuất.", true);
+    await refreshAccess();
+  });
+}
+
 function bindNav() {
   $$("[data-scroll]").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -382,6 +603,8 @@ function bindNav() {
 async function boot() {
   initStars();
   bindNav();
+  bindAccess();
+  await refreshAccess();
   try {
     const res = await fetch("./cards.json");
     cards = await res.json();

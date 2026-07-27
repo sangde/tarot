@@ -28,6 +28,8 @@
       <nav class="nav">
         <button type="button" class="nav-link" data-scroll="draw">Rút bài</button>
         <button type="button" class="nav-link" data-scroll="meanings">Thư viện</button>
+        <span class="access-badge" id="access-badge">Miễn phí · 1 lần/IP</span>
+        <button type="button" class="btn btn-ghost btn-sm" id="open-access">Tài khoản / Mã</button>
       </nav>
     </header>
 
@@ -59,6 +61,11 @@
           <p>Chọn kiểu trải, đặt câu hỏi trong lòng, rồi rút bài.</p>
         </div>
 
+        <p class="access-note" id="access-note">
+          Khách (không đăng nhập): mỗi IP chỉ rút <strong>1 lần · 1 lá</strong>. Có mã hoặc tài khoản
+          kích hoạt để rút không giới hạn và mở trải bài nâng cao.
+        </p>
+
         <form class="draw-form" id="draw-form">
           <label class="field">
             <span>Câu hỏi của bạn (tuỳ chọn)</span>
@@ -77,28 +84,28 @@
               <input type="radio" name="spread" value="1" checked />
               <span>
                 <strong>Một lá</strong>
-                <em>Thông điệp hôm nay</em>
+                <em>Thông điệp hôm nay · miễn phí</em>
               </span>
             </label>
-            <label class="spread-option">
+            <label class="spread-option premium-only">
               <input type="radio" name="spread" value="3" />
               <span>
                 <strong>Ba lá</strong>
-                <em>Quá khứ · Hiện tại · Tương lai</em>
+                <em>Quá khứ · Hiện tại · Tương lai · Premium</em>
               </span>
             </label>
-            <label class="spread-option">
+            <label class="spread-option premium-only">
               <input type="radio" name="spread" value="love" />
               <span>
                 <strong>Tình cảm</strong>
-                <em>Bạn · Đối phương · Mối quan hệ</em>
+                <em>Bạn · Đối phương · Mối quan hệ · Premium</em>
               </span>
             </label>
           </fieldset>
 
-          <label class="toggle">
-            <input type="checkbox" id="allow-reversed" checked />
-            <span>Cho phép lá ngược</span>
+          <label class="toggle premium-only">
+            <input type="checkbox" id="allow-reversed" />
+            <span>Cho phép lá ngược (Premium)</span>
           </label>
 
           <button type="submit" class="btn btn-primary btn-wide" id="draw-btn">
@@ -138,6 +145,57 @@
       <form method="dialog">
         <button class="dialog-close" aria-label="Đóng">×</button>
       </form>
+    </dialog>
+
+    <dialog class="card-dialog access-dialog" id="access-dialog">
+      <form method="dialog">
+        <button class="dialog-close" aria-label="Đóng">×</button>
+      </form>
+      <div class="dialog-inner">
+        <h3 class="access-title">Tài khoản & mã kích hoạt</h3>
+        <p class="access-desc" id="access-dialog-status">Đang tải trạng thái…</p>
+
+        <div class="access-tabs" role="tablist">
+          <button type="button" class="tab active" data-access-tab="code">Mã kích hoạt</button>
+          <button type="button" class="tab" data-access-tab="login">Đăng nhập</button>
+          <button type="button" class="tab" data-access-tab="register">Đăng ký</button>
+        </div>
+
+        <form class="access-panel" id="panel-code" data-panel="code">
+          <label class="field">
+            <span>Mã kích hoạt</span>
+            <input type="text" id="activate-code" placeholder="VD: TAROT-VIP-2026" autocomplete="off" />
+          </label>
+          <button type="submit" class="btn btn-primary btn-wide">Kích hoạt</button>
+        </form>
+
+        <form class="access-panel" id="panel-login" data-panel="login" hidden>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="login-email" autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Mật khẩu</span>
+            <input type="password" id="login-password" autocomplete="current-password" />
+          </label>
+          <button type="submit" class="btn btn-primary btn-wide">Đăng nhập</button>
+        </form>
+
+        <form class="access-panel" id="panel-register" data-panel="register" hidden>
+          <label class="field">
+            <span>Email</span>
+            <input type="email" id="register-email" autocomplete="username" />
+          </label>
+          <label class="field">
+            <span>Mật khẩu (tối thiểu 6 ký tự)</span>
+            <input type="password" id="register-password" autocomplete="new-password" />
+          </label>
+          <button type="submit" class="btn btn-primary btn-wide">Tạo tài khoản</button>
+        </form>
+
+        <p class="access-feedback" id="access-feedback" hidden></p>
+        <button type="button" class="btn btn-ghost btn-wide" id="logout-btn" hidden>Đăng xuất</button>
+      </div>
     </dialog>
 
     <footer class="site-footer">
