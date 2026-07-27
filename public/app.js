@@ -309,12 +309,26 @@ function renderDrawnCards() {
   });
 }
 
+function showDrawError(message) {
+  let box = $("#draw-error");
+  if (!box) {
+    box = document.createElement("p");
+    box.id = "draw-error";
+    box.className = "access-feedback is-err";
+    $("#draw-form")?.after(box);
+  }
+  box.hidden = false;
+  box.innerHTML = `${escapeHtml(message)} <button type="button" class="nav-link" id="err-open-access">Mở tài khoản / mã</button>`;
+  $("#err-open-access")?.addEventListener("click", () => $("#access-dialog").showModal());
+}
+
 async function runDraw(event) {
   event?.preventDefault();
   const spreadKey = $$('input[name="spread"]:checked')[0]?.value || "1";
   const positions = SPREADS[spreadKey];
   const allowReversed = $("#allow-reversed").checked;
   const question = $("#question").value.trim();
+  $("#draw-error") && ($("#draw-error").hidden = true);
 
   document.body.classList.add("shuffling");
   $("#draw-btn").textContent = "Đang xào bài…";
@@ -327,7 +341,7 @@ async function runDraw(event) {
   } catch (err) {
     document.body.classList.remove("shuffling");
     $("#draw-btn").textContent = "Xào bài & rút";
-    alert(err.data?.message || err.message);
+    showDrawError(err.data?.message || err.message || "Không rút được bài.");
     if (err.data?.error === "ip_limit" || err.data?.error === "free_limit") {
       $("#access-dialog").showModal();
     }

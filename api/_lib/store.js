@@ -45,13 +45,13 @@ async function set(key, value) {
   }
 }
 
-async function hasDrawn(ipHash) {
-  const v = await get(`ip:${ipHash}`);
+async function hasDrawn(key) {
+  const v = await get(key);
   return v === "1" || v === 1 || v === true;
 }
 
-async function markDrawn(ipHash) {
-  await set(`ip:${ipHash}`, "1");
+async function markDrawn(key) {
+  await set(key, "1");
 }
 
 async function getUser(email) {

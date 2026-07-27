@@ -56,17 +56,35 @@ function checkPassword(password, stored) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+function headerValue(headers, name) {
+  const v = headers[name] ?? headers[name.toLowerCase()];
+  if (Array.isArray(v)) return v[0];
+  return typeof v === "string" ? v : null;
+}
+
 function clientIp(req) {
-  const xf = req.headers["x-forwarded-for"];
-  if (typeof xf === "string" && xf.length) return xf.split(",")[0].trim();
-  if (Array.isArray(xf) && xf[0]) return String(xf[0]).split(",")[0].trim();
-  const real = req.headers["x-real-ip"];
-  if (real) return String(real);
-  return req.socket?.remoteAddress || "0.0.0.0";
+  const headers = req.headers || {};
+  const candidates = [
+    headerValue(headers, "x-vercel-forwarded-for"),
+    headerValue(headers, "x-real-ip"),
+    headerValue(headers, "cf-connecting-ip"),
+    headerValue(headers, "x-forwarded-for"),
+  ];
+  for (const raw of candidates) {
+    if (!raw) continue;
+    const ip = String(raw).split(",")[0].trim().replace(/^::ffff:/, "");
+    if (!ip || ip === "0.0.0.0" || ip === "::" || ip === "127.0.0.1") continue;
+    return ip;
+  }
+  const socketIp = req.socket?.remoteAddress?.replace(/^::ffff:/, "");
+  if (socketIp && socketIp !== "0.0.0.0" && socketIp !== "::" && socketIp !== "127.0.0.1") {
+    return socketIp;
+  }
+  return null;
 }
 
 function hashIp(ip) {
-  return crypto.createHash("sha256").update(`${secret()}:${ip}`).digest("hex").slice(0, 32);
+  return crypto.createHash("sha256").update(`${secret()}:${ip || "unknown"}`).digest("hex").slice(0, 32);
 }
 
 function parseCookies(req) {
@@ -78,6 +96,31 @@ function parseCookies(req) {
     out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
   });
   return out;
+}
+
+function mintGuestId() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+function guestIdCookie(gid) {
+  const secure = process.env.NODE_ENV === "production" || process.env.VERCEL ? "; Secure" : "";
+  return `tarot_gid=${encodeURIComponent(gid)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 400}${secure}`;
+}
+
+/** Stable free-tier identity: prefer real client IP, else persistent guest id. */
+function freeIdentity(req) {
+  const ip = clientIp(req);
+  const cookies = parseCookies(req);
+  let gid = cookies.tarot_gid;
+  let newGidCookie = null;
+  if (!gid) {
+    gid = mintGuestId();
+    newGidCookie = guestIdCookie(gid);
+  }
+  if (ip) {
+    return { key: `ip:${hashIp(ip)}`, ip, gid, newGidCookie };
+  }
+  return { key: `gid:${gid}`, ip: null, gid, newGidCookie };
 }
 
 function getSession(req) {
@@ -118,4 +161,6 @@ module.exports = {
   sessionCookie,
   clearSessionCookie,
   activationCodes,
+  freeIdentity,
+  guestIdCookie,
 };
