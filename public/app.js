@@ -186,6 +186,7 @@ function applyAccessUI() {
 }
 
 function renderInterpretation(drawnCard) {
+  if (!drawnCard?.card) return;
   const { card, reversed } = drawnCard;
   const bundle = meaningBundle(drawnCard);
   const tabs = access.premium
@@ -326,11 +327,21 @@ async function runDraw(event) {
   event?.preventDefault();
   const spreadKey = $$('input[name="spread"]:checked')[0]?.value || "1";
   const positions = SPREADS[spreadKey];
-  const allowReversed = $("#allow-reversed").checked;
+  if (!positions) {
+    showDrawError("Kiểu trải không hợp lệ.");
+    return;
+  }
+  if (!cards.length) {
+    showDrawError("Đang tải bộ bài, thử lại sau giây lát.");
+    return;
+  }
+
+  const allowReversed = Boolean($("#allow-reversed")?.checked) && access.premium;
   const question = $("#question").value.trim();
-  $("#draw-error") && ($("#draw-error").hidden = true);
+  if ($("#draw-error")) $("#draw-error").hidden = true;
 
   document.body.classList.add("shuffling");
+  $("#draw-btn").disabled = true;
   $("#draw-btn").textContent = "Đang xào bài…";
 
   try {
@@ -340,6 +351,7 @@ async function runDraw(event) {
     });
   } catch (err) {
     document.body.classList.remove("shuffling");
+    $("#draw-btn").disabled = false;
     $("#draw-btn").textContent = "Xào bài & rút";
     showDrawError(err.data?.message || err.message || "Không rút được bài.");
     if (err.data?.error === "ip_limit" || err.data?.error === "free_limit") {
@@ -349,15 +361,23 @@ async function runDraw(event) {
     return;
   }
 
-  await wait(450);
+  await wait(350);
 
   drawn = pickCards(positions.length, allowReversed).map((d, i) => ({
     ...d,
     position: positions[i],
     delay: 180 + i * 320,
   }));
-  activeIndex = 0;
 
+  if (!drawn.length || !drawn[0]?.card) {
+    document.body.classList.remove("shuffling");
+    $("#draw-btn").disabled = false;
+    $("#draw-btn").textContent = "Xào bài & rút";
+    showDrawError("Không lấy được lá bài. Tải lại trang rồi thử lại.");
+    return;
+  }
+
+  activeIndex = 0;
   $("#reading").hidden = false;
   $("#reading-question").textContent = question
     ? `“${question}”`
@@ -369,6 +389,7 @@ async function runDraw(event) {
   renderInterpretation(drawn[0]);
   await refreshAccess();
 
+  $("#draw-btn").disabled = false;
   $("#draw-btn").textContent = "Xào bài & rút";
   document.body.classList.remove("shuffling");
   $("#reading").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -618,7 +639,9 @@ async function boot() {
   initStars();
   bindNav();
   bindAccess();
-  await refreshAccess();
+  $("#draw-btn").disabled = true;
+  $("#draw-btn").textContent = "Đang tải bài…";
+
   try {
     const res = await fetch("./cards.json");
     cards = await res.json();
@@ -627,8 +650,14 @@ async function boot() {
   } catch (err) {
     console.error(err);
     $("#library-grid").innerHTML =
-      "<p>Không tải được dữ liệu lá bài. Hãy chạy lại từ thư mục public.</p>";
+      "<p>Không tải được dữ liệu lá bài. Hãy tải lại trang.</p>";
+    showDrawError("Không tải được bộ bài. Hãy tải lại trang.");
+    return;
   }
+
+  $("#draw-btn").disabled = false;
+  $("#draw-btn").textContent = "Xào bài & rút";
+  await refreshAccess();
 }
 
 boot();

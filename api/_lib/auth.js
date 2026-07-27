@@ -107,7 +107,7 @@ function guestIdCookie(gid) {
   return `tarot_gid=${encodeURIComponent(gid)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 400}${secure}`;
 }
 
-/** Stable free-tier identity: prefer real client IP, else persistent guest id. */
+/** Stable free-tier identity: always key by guest id cookie; IP is optional extra. */
 function freeIdentity(req) {
   const ip = clientIp(req);
   const cookies = parseCookies(req);
@@ -117,10 +117,13 @@ function freeIdentity(req) {
     gid = mintGuestId();
     newGidCookie = guestIdCookie(gid);
   }
-  if (ip) {
-    return { key: `ip:${hashIp(ip)}`, ip, gid, newGidCookie };
-  }
-  return { key: `gid:${gid}`, ip: null, gid, newGidCookie };
+  return {
+    key: `gid:${gid}`,
+    ipKey: ip ? `ip:${hashIp(ip)}` : null,
+    ip,
+    gid,
+    newGidCookie,
+  };
 }
 
 function getSession(req) {

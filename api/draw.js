@@ -1,9 +1,9 @@
 const crypto = require("crypto");
 const { setCors, json, readBody } = require("./_lib/http");
 const { getSession, freeIdentity } = require("./_lib/auth");
-const { hasDrawn, markDrawn } = require("./_lib/store");
+const { hasDrawn, markDrawn, usingRedis } = require("./_lib/store");
 
-function guestUsedCookie(key) {
+function guestUsedCookieValue(key) {
   const secret = process.env.AUTH_SECRET || "tarot-dev-secret-change-me";
   const sig = crypto.createHmac("sha256", secret).update(`guest:${key}`).digest("hex").slice(0, 24);
   const secure = process.env.NODE_ENV === "production" || process.env.VERCEL ? "; Secure" : "";
@@ -12,7 +12,8 @@ function guestUsedCookie(key) {
   }${secure}`;
 }
 
-function guestCookieUsed(req, key) {
+/** True if browser already has a valid used-guest cookie (any key). */
+function hasValidGuestUsedCookie(req) {
   const raw = req.headers.cookie || "";
   const m = raw.match(/(?:^|;\s*)tarot_guest=([^;]+)/);
   if (!m) return false;
@@ -21,16 +22,15 @@ function guestCookieUsed(req, key) {
   if (idx < 0) return false;
   const storedKey = token.slice(0, idx);
   const sig = token.slice(idx + 1);
+  if (!storedKey || !sig) return false;
   const secret = process.env.AUTH_SECRET || "tarot-dev-secret-change-me";
   const expect = crypto.createHmac("sha256", secret).update(`guest:${storedKey}`).digest("hex").slice(0, 24);
-  if (sig !== expect) return false;
-  return storedKey === key;
+  return sig === expect;
 }
 
 function setCookies(headers, cookies) {
   const list = cookies.filter(Boolean);
   if (!list.length) return headers;
-  // Node/Vercel accepts array for multiple Set-Cookie
   headers["Set-Cookie"] = list.length === 1 ? list[0] : list;
   return headers;
 }
@@ -83,7 +83,17 @@ module.exports = async (req, res) => {
       );
     }
 
-    const used = (await hasDrawn(identity.key)) || guestCookieUsed(req, identity.key);
+    // Cookie is source of truth without Redis. With Redis, also enforce IP.
+    let used = hasValidGuestUsedCookie(req);
+    if (!used && usingRedis()) {
+      used =
+        (await hasDrawn(identity.key)) ||
+        (identity.ipKey ? await hasDrawn(identity.ipKey) : false);
+    } else if (!used) {
+      // memory fallback only by stable guest id (not shared IP bucket)
+      used = await hasDrawn(identity.key);
+    }
+
     if (used) {
       return json(
         res,
@@ -91,7 +101,7 @@ module.exports = async (req, res) => {
         {
           error: "ip_limit",
           message:
-            "Bạn đã dùng hết 1 lượt miễn phí trên thiết bị/mạng này. Nhập mã kích hoạt hoặc đăng nhập tài khoản đã kích hoạt để rút tiếp.",
+            "Bạn đã dùng hết 1 lượt miễn phí trên trình duyệt này. Nhập mã kích hoạt (vd DEMO-UNLOCK) để rút tiếp.",
         },
         setCookies({}, [identity.newGidCookie]),
         req
@@ -99,7 +109,8 @@ module.exports = async (req, res) => {
     }
 
     await markDrawn(identity.key);
-    setCookies(headers, [identity.newGidCookie, guestUsedCookie(identity.key)]);
+    if (usingRedis() && identity.ipKey) await markDrawn(identity.ipKey);
+    setCookies(headers, [identity.newGidCookie, guestUsedCookieValue(identity.key)]);
   }
 
   return json(res, 200, { ok: true, premium, drawsLeft: premium ? null : 0 }, headers, req);

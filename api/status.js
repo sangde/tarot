@@ -3,7 +3,7 @@ const { setCors, json } = require("./_lib/http");
 const { getSession, freeIdentity } = require("./_lib/auth");
 const { hasDrawn, usingRedis } = require("./_lib/store");
 
-function guestCookieUsed(req, key) {
+function hasValidGuestUsedCookie(req) {
   const raw = req.headers.cookie || "";
   const m = raw.match(/(?:^|;\s*)tarot_guest=([^;]+)/);
   if (!m) return false;
@@ -12,10 +12,10 @@ function guestCookieUsed(req, key) {
   if (idx < 0) return false;
   const storedKey = token.slice(0, idx);
   const sig = token.slice(idx + 1);
+  if (!storedKey || !sig) return false;
   const secret = process.env.AUTH_SECRET || "tarot-dev-secret-change-me";
   const expect = crypto.createHmac("sha256", secret).update(`guest:${storedKey}`).digest("hex").slice(0, 24);
-  if (sig !== expect) return false;
-  return storedKey === key;
+  return sig === expect;
 }
 
 module.exports = async (req, res) => {
@@ -29,9 +29,18 @@ module.exports = async (req, res) => {
   const session = getSession(req);
   const premium = Boolean(session?.premium);
   const identity = freeIdentity(req);
-  const drawn = premium
-    ? false
-    : (await hasDrawn(identity.key)) || guestCookieUsed(req, identity.key);
+
+  let drawn = false;
+  if (!premium) {
+    drawn = hasValidGuestUsedCookie(req);
+    if (!drawn && usingRedis()) {
+      drawn =
+        (await hasDrawn(identity.key)) ||
+        (identity.ipKey ? await hasDrawn(identity.ipKey) : false);
+    } else if (!drawn) {
+      drawn = await hasDrawn(identity.key);
+    }
+  }
 
   const headers = {};
   if (identity.newGidCookie) headers["Set-Cookie"] = identity.newGidCookie;
