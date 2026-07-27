@@ -387,12 +387,12 @@ async function runDraw(event) {
 
   renderDrawnCards();
   renderInterpretation(drawn[0]);
-  await refreshAccess();
 
   $("#draw-btn").disabled = false;
   $("#draw-btn").textContent = "Xào bài & rút";
   document.body.classList.remove("shuffling");
   $("#reading").scrollIntoView({ behavior: "smooth", block: "start" });
+  refreshAccess().catch(() => {});
 }
 
 function wait(ms) {
