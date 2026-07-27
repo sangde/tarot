@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tarot — Rút Bài & Giải Nghĩa</title>
+    <meta
+      name="description"
+      content="Rút bài Tarot trực tuyến và xem giải nghĩa 78 lá theo chuẩn Rider–Waite, tiếng Việt."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true">
+      <div class="mist mist-a"></div>
+      <div class="mist mist-b"></div>
+      <canvas id="stars" class="stars"></canvas>
+    </div>
+
+    <header class="site-header">
+      <a class="brand" href="#">Tarot</a>
+      <nav class="nav">
+        <button type="button" class="nav-link" data-scroll="draw">Rút bài</button>
+        <button type="button" class="nav-link" data-scroll="meanings">Thư viện</button>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" id="top">
+        <p class="hero-kicker">78 lá · Rider–Waite Smith</p>
+        <h1 class="hero-brand">Tarot</h1>
+        <p class="hero-lead">
+          Rút bài, lắng nghe trực giác, rồi đọc giải nghĩa đầy đủ bằng tiếng Việt.
+        </p>
+        <div class="hero-actions">
+          <button type="button" class="btn btn-primary" data-scroll="draw">
+            Bắt đầu rút bài
+          </button>
+          <button type="button" class="btn btn-ghost" data-scroll="meanings">
+            Xem 78 lá
+          </button>
+        </div>
+        <div class="hero-deck" aria-hidden="true">
+          <span class="deck-card c1"></span>
+          <span class="deck-card c2"></span>
+          <span class="deck-card c3"></span>
+        </div>
+      </section>
+
+      <section class="draw-section" id="draw">
+        <div class="section-head">
+          <h2>Trải bài</h2>
+          <p>Chọn kiểu trải, đặt câu hỏi trong lòng, rồi rút bài.</p>
+        </div>
+
+        <form class="draw-form" id="draw-form">
+          <label class="field">
+            <span>Câu hỏi của bạn (tuỳ chọn)</span>
+            <input
+              type="text"
+              id="question"
+              name="question"
+              placeholder="Ví dụ: Tôi nên chú ý điều gì trong tuần này?"
+              autocomplete="off"
+            />
+          </label>
+
+          <fieldset class="spread-picker">
+            <legend>Kiểu trải</legend>
+            <label class="spread-option">
+              <input type="radio" name="spread" value="1" checked />
+              <span>
+                <strong>Một lá</strong>
+                <em>Thông điệp hôm nay</em>
+              </span>
+            </label>
+            <label class="spread-option">
+              <input type="radio" name="spread" value="3" />
+              <span>
+                <strong>Ba lá</strong>
+                <em>Quá khứ · Hiện tại · Tương lai</em>
+              </span>
+            </label>
+            <label class="spread-option">
+              <input type="radio" name="spread" value="love" />
+              <span>
+                <strong>Tình cảm</strong>
+                <em>Bạn · Đối phương · Mối quan hệ</em>
+              </span>
+            </label>
+          </fieldset>
+
+          <label class="toggle">
+            <input type="checkbox" id="allow-reversed" checked />
+            <span>Cho phép lá ngược</span>
+          </label>
+
+          <button type="submit" class="btn btn-primary btn-wide" id="draw-btn">
+            Xào bài & rút
+          </button>
+        </form>
+
+        <div class="reading" id="reading" hidden>
+          <div class="reading-meta">
+            <p class="reading-question" id="reading-question"></p>
+            <button type="button" class="btn btn-ghost" id="redraw-btn">Rút lại</button>
+          </div>
+          <div class="cards-row" id="cards-row"></div>
+          <div class="interpretation" id="interpretation"></div>
+        </div>
+      </section>
+
+      <section class="library-section" id="meanings">
+        <div class="section-head">
+          <h2>Thư viện 78 lá</h2>
+          <p>Chọn một lá để xem từ khóa và mô tả chi tiết.</p>
+        </div>
+        <div class="library-filters">
+          <button type="button" class="chip active" data-filter="all">Tất cả</button>
+          <button type="button" class="chip" data-filter="major">Ẩn chính</button>
+          <button type="button" class="chip" data-filter="Cups">Cups</button>
+          <button type="button" class="chip" data-filter="Pentacles">Pentacles</button>
+          <button type="button" class="chip" data-filter="Swords">Swords</button>
+          <button type="button" class="chip" data-filter="Wands">Wands</button>
+        </div>
+        <div class="library-grid" id="library-grid"></div>
+      </section>
+    </main>
+
+    <dialog class="card-dialog" id="card-dialog">
+      <div class="dialog-inner" id="dialog-inner"></div>
+      <form method="dialog">
+        <button class="dialog-close" aria-label="Đóng">×</button>
+      </form>
+    </dialog>
+
+    <footer class="site-footer">
+      <p>
+        Giải nghĩa tham khảo từ
+        <a href="https://tarot.vn/giai-y-nghia-78-la-bai-tarot/" target="_blank" rel="noopener"
+          >tarot.vn</a
+        >
+        · Chuẩn Rider–Waite Smith. Ý nghĩa mang tính gợi ý; hãy tin vào trực giác của bạn.
+      </p>
+    </footer>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
